@@ -46,5 +46,6 @@ class DataIngestion:
             info("Error occurred during Data Ingestion")
             raise CustomException(e, sys)
 if __name__ == "__main__":
+    from src.components.data_transformation import DataTransformation
     obj = DataIngestion()
     obj.initiate_data_ingestion()
