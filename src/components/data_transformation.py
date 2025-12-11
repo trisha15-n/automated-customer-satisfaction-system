@@ -7,6 +7,11 @@ from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder,OneHotEncoder, StandardScaler
+
+import nltk
+from nltk.sentiment import SentimentIntensityAnalyzer
+nltk.download('vader_lexicon', quiet=True)
+
 from src.exception import CustomException
 from src.logger import info
 from src.utils import save_object
@@ -19,9 +24,19 @@ class DataTransformation:
     def __init__(self):
         self.data_transformation_config = DataTransformationConfig()
 
+    def get_sentiment_score(self, text):
+        try:
+            sa = SentimentIntensityAnalyzer()
+            if pd.isna(text) or text == "":
+                return 0.0
+            return sa.polarity_scores(text)['compound']
+        except Exception as e:
+            return 0.0
+
+
     def get_data_transformer_object(self):
         try:
-            numerical_columns = ['Customer Age']
+            numerical_columns = ['Customer Age', 'sentiment_score']
             ordinal_columns = ['Ticket Priority']
             nominal_columns = ['Ticket Type', "Ticket Status", "Ticket Channel", 'Product Purchased', 'Customer Gender'] 
 
@@ -52,12 +67,24 @@ class DataTransformation:
             return preprocessor
         except Exception as e:
             raise CustomException(e, sys)
+        
     def initiate_data_transformation(self, train_path, test_path):
         try:
             train_df = pd.read_csv(train_path)
             test_df = pd.read_csv(test_path)
 
             info("Read train and test data completed")
+
+            info("Sentiment Score Calculation")
+
+            train_df['full_text'] = train_df['Ticket Subject'].fillna('')+ " "+ train_df['Ticket Description'].fillna('')
+
+            test_df['full_text'] = test_df['Ticket Subject'].fillna('')+ " "+ test_df['Ticket Description'].fillna('')
+
+            train_df['sentiment_score'] = train_df['full_text'].apply(self.get_sentiment_score)
+            
+            test_df['sentiment_score'] = test_df['full_text'].apply(self.get_sentiment_score)
+
 
             preprocessor_obj = self.get_data_transformer_object()
             target_column_name = 'Customer Satisfaction Rating'

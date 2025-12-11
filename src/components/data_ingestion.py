@@ -29,6 +29,10 @@ class DataIngestion:
 
             info(f"Dropped rows with missing target values. Initial count: {initial_cnt}, Final count: {final_cnt}")
 
+            info("Target to binary labels")
+            df['Customer Satisfaction Rating'] = df['Customer Satisfaction Rating'].apply(lambda x: 1 if x >= 4 else 0)
+
+
             os.makedirs(os.path.dirname(self.ingestion_config.train_data_path), exist_ok=True)
             df.to_csv(self.ingestion_config.raw_data_path, index=False, header=True)
 
