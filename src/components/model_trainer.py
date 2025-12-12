@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, precision_score, recall_score
 from src.exception import CustomException
 from src.logger import info
 from src.utils import save_object
@@ -45,12 +45,14 @@ class ModelTrainer:
 
 
       models = {
-        "Logistic Regression" : LogisticRegression(),
-        "Random Forest Classifier" : RandomForestClassifier(),
-        "XGBoost" : XGBClassifier(use_label_encoder=False, eval_metric='logloss')
+        "Logistic Regression" : LogisticRegression(class_weight='balanced'),
+        "Random Forest Classifier" : RandomForestClassifier(class_weight='balanced'),
+        "XGBoost" : XGBClassifier(scale_pos_weight=1.55,use_label_encoder=False, eval_metric='logloss')
       }
 
       models_report = {}
+      #models_report_p = {}
+      models_report_r = {}
       for model_name, model in models.items():
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
@@ -58,18 +60,30 @@ class ModelTrainer:
         accuracy = accuracy_score(y_test, y_pred)
         models_report[model_name] = accuracy
 
+        precision = precision_score(y_test, y_pred)
+        recall = recall_score(y_test, y_pred)
+        #models_report_p[model_name] = precision
+        models_report_r[model_name] = recall
+
+
         info(f"{model_name} Accuracy: {accuracy}")
+        info(f"{model_name} Precision: {precision}")
+        info(f"{model_name} Recall: {recall}")
 
-      best_model_accuracy = max(models_report.values())
+      best_model_score = max(models_report_r.values())
 
-      best_model_name = list(models_report.keys())[list(models_report.values()).index(best_model_accuracy)]
+      best_model_name = list(models_report_r.keys())[list(models_report_r.values()).index(best_model_score)]
       
       best_model = models[best_model_name]
 
-      if best_model_accuracy < 0.6:
+
+
+      """if best_model_accuracy < 0.6:
         info("No model found with accuracy greater than 60%")
       
-      info(f"Best Model Found: {best_model_name} with accuracy {best_model_accuracy}")
+      info(f"Best Model Found: {best_model_name} with accuracy {best_model_accuracy}")"""
+
+      info(f"Best Model Found: {best_model_name} with recall {best_model_score}")
 
       save_object(
         file_path=self.model_trainer_config.trained_model_file_path,  
@@ -78,6 +92,7 @@ class ModelTrainer:
 
       predicted = best_model.predict(X_test)
       acc = accuracy_score(y_test, predicted)
+
       return acc
     except Exception as e:
       raise CustomException(e, sys)
