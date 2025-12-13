@@ -8,6 +8,7 @@ from src.exception import CustomException
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, LabelEncoder
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.pipeline import Pipeline
 from src.utils import save_object
 
@@ -22,10 +23,17 @@ class DataTransformationCategory:
 
     def get_data_transformer_object(self):
         try:
+            text_columns = 'full_text'
 
             numerical_columns = ["Customer Age"]
 
             categorical_columns = ["Ticket Priority","Ticket Channel", "Product Purchased", "Ticket Status", "Customer Gender"]
+
+            text_pipeline = Pipeline(
+                steps=[
+                    ("tfidf", TfidfVectorizer(stop_words='english', max_features=5000))
+                ]
+            )
 
             num_pipeline = Pipeline(
                 steps=[
@@ -45,7 +53,8 @@ class DataTransformationCategory:
             preprocessor = ColumnTransformer(
                 [
                     ("num_pipeline", num_pipeline, numerical_columns),
-                    ("cat_pipeline", cat_pipeline, categorical_columns)
+                    ("cat_pipeline", cat_pipeline, categorical_columns),
+                    ("text_pipeline", text_pipeline, text_columns)
                 ]
             )
             return preprocessor
@@ -59,6 +68,11 @@ class DataTransformationCategory:
             train_df = pd.read_csv(train_path)
             test_df = pd.read_csv(test_path)
             info("Read train and test data completed")
+
+            train_df['full_text'] = train_df['Ticket Subject'].fillna('') + ' ' + train_df['Ticket Description'].fillna('')
+            test_df['full_text'] = test_df['Ticket Subject'].fillna('') + ' ' + test_df['Ticket Description'].fillna('')
+
+            info("Created full_text feature by combining Ticket Subject and Ticket Description")
 
             preprocessor_obj = self.get_data_transformer_object()
 
