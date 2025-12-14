@@ -13,7 +13,7 @@ from src.logger import info
 
 @dataclass
 class ModelTrainerConfig:
-    trained_model_file_path: str = os.path.join("artifacts", "model.pkl")
+    trained_model_file_path: str = os.path.join("artifacts", "model_category.pkl")
 
 class ModelTrainerCategory:
     def __init__(self):
