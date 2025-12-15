@@ -102,8 +102,21 @@ if submitted:
 
   r_col1, r_col2 = st.columns(2)
 
+  predicted_id = cat_pred_index[0]
+
+  category_map = {
+     0:'Account Access',
+    1:'General Inquiry',
+    2:'Firmware/Update Issue',
+    3: 'Technical Support',
+    4: 'Product Issue'
+  }
+
+  category_name = category_map.get(predicted_id, "Unknown")
+
+  r_col1, r_col2 = st.columns(2)
   with r_col1:
-    st.success(f"Predicted Category: {pred_category}")
+    st.success(f"Predicted Category: {category_name}")
   with r_col2:
     #prior_color = "red" if pred_priority in ["Critical", "High"] else "blue"
     st.success(f"Predicted Priority: {pred_priority}") 
@@ -133,7 +146,7 @@ if submitted:
   probs = sat_model.predict_proba(sat_transformed)
   prob_not_churn = probs[0][1]
 
-  if prob_not_churn >= threshold:
+  if prob_not_churn >= 0.5:
     sentiment_rs = "Not Likely to Churn."
 
   else:
@@ -141,7 +154,7 @@ if submitted:
 
 
   st.markdown(f"Customer is  {sentiment_rs}")
-  st.progress(prob_not_churn, text=f"Confidence Score: {prob_not_churn:.2%}")
+  st.progress(prob_not_churn, text=f"Probabilty of Retention: {prob_not_churn:.2%}")
 
   with st.expander("See Behind the Scenes"):
         st.write("Sentiment Score (VADER):", sat_input_df['sentiment_score'][0])
