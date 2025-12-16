@@ -78,6 +78,11 @@ if submitted:
 
   pred_priority = priority_engine.predict_priority(subject, description)
 
+  full_text = f"{subject}{description}"
+  sentiment_score = sia.polarity_scores(full_text)['compound']
+  if sentiment_score > 0.5:
+    pred_priority = "Low"
+
   cat_input = pd.DataFrame({
     'Customer Age':[age],
     'Ticket Priority': [pred_priority],
