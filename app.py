@@ -80,7 +80,7 @@ if submitted:
 
   sentiment_score = sia.polarity_scores(full_text)['compound']
 
-  positive_keywords = ["no issue", "no problem", "thank you", "thanks", "great job", "all good", "no complaints", "not bad", "satisfied", "happy"]
+  positive_keywords = ["no issue", "no problem", "thank you", "thanks", "great job", "all good", "no complaints", "not bad", "satisfied", "happy","invoice", "receipt", "bill request", "tracking", "status", "address"]
 
   is_praise = False
 
