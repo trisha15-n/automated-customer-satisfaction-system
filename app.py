@@ -76,11 +76,27 @@ with st.form("ticket_form"):
 if submitted:
   st.divider()
 
+  full_text = f"{subject} {description}"
+
+  sentiment_score = sia.polarity_scores(full_text)['compound']
+
+  positive_keywords = ["no issue", "no problem", "thank you", "thanks", "great job", "all good", "no complaints", "not bad", "satisfied", "happy"]
+
+  is_praise = False
+
+  if sentiment_score > 0.5 or any(phase in full_text.lower() for phase in positive_keywords):
+    is_praise = True
+
   pred_priority = priority_engine.predict_priority(subject, description)
 
-  full_text = f"{subject}{description}"
-  sentiment_score = sia.polarity_scores(full_text)['compound']
-  if sentiment_score > 0.5:
+  critical_keywords = ["login", "password", "access", "unable", "fail", "reset", "locked", "crash"]
+
+  is_critical = any(k in full_text.lower() for k in critical_keywords)
+  
+  if is_critical:
+    pred_priority = "High"
+    is_praise = False
+  elif is_praise:
     pred_priority = "Low"
 
   cat_input = pd.DataFrame({
@@ -97,41 +113,40 @@ if submitted:
 
   cat_input['full_text'] = cat_input['Ticket Subject'].fillna('') + " "+ cat_input['Ticket Description'].fillna('')
 
-  cat_transformed = cat_prep.transform(cat_input)
+  if is_praise:
+    category_name = "General Inquiry / Positive Feedback"
+  else:
+    cat_transformed = cat_prep.transform(cat_input)
+    if hasattr(cat_transformed, "toarray"):
+      cat_transformed = cat_transformed.toarray()
 
-  if hasattr(cat_transformed, "toarray"):
-    cat_transformed = cat_transformed.toarray()
+    cat_pred_index = cat_model.predict(cat_transformed)
 
-  cat_pred_index = cat_model.predict(cat_transformed)
-  pred_category = cat_le.inverse_transform(cat_pred_index)[0]
-
-  r_col1, r_col2 = st.columns(2)
-
-  predicted_id = cat_pred_index[0]
-
-  category_map = {
-     0:'Account Access',
-    1:'General Inquiry',
-    2:'Firmware/Update Issue',
-    3: 'Technical Support',
-    4: 'Product Issue'
-  }
-
-  category_name = category_map.get(predicted_id, "Unknown")
+    category_map = {
+      0:'Account Access',
+      1:'General Inquiry',
+      2:'Firmware/Update Issue',
+      3: 'Technical Support',
+      4: 'Product Issue'
+    }
+    category_name = category_map.get(cat_pred_index[0], "Unknown")
 
   r_col1, r_col2 = st.columns(2)
   with r_col1:
     st.success(f"Predicted Category: {category_name}")
   with r_col2:
     #prior_color = "red" if pred_priority in ["Critical", "High"] else "blue"
-    st.success(f"Predicted Priority: {pred_priority}") 
+    if pred_priority in ["High", "Critical"]:
+      st.error(f"Predicted Priority: {pred_priority}")
+    else:
+      st.success(f"Predicted Priority: {pred_priority}") 
 
 
   sat_input_df = pd.DataFrame({
     'Customer Age': [age],
         'Customer Gender': [gender],
         'Product Purchased': [product],
-        'Ticket Type': [pred_category], 
+        'Ticket Type': [category_name], 
         'Ticket Priority': [pred_priority], 
         'Ticket Channel': [channel],
         'Ticket Status': [status],
@@ -144,18 +159,22 @@ if submitted:
 
   sat_input_df['full_text'] = sat_input_df['Ticket Subject'] + " " + sat_input_df['Ticket Description']
 
-  sat_input_df['sentiment_score'] = sat_input_df['full_text'].apply(lambda x: sia.polarity_scores(str(x))['compound'])
+  sat_input_df['sentiment_score'] = sentiment_score
 
-
-  sat_transformed = sat_prep.transform(sat_input_df)
-  probs = sat_model.predict_proba(sat_transformed)
-  prob_not_churn = probs[0][1]
-
-  if prob_not_churn >= 0.5:
+  if is_praise:
+    prob_not_churn = 0.99
     sentiment_rs = "Not Likely to Churn."
 
   else:
-    sentiment_rs = "Likely to Churn."
+    sat_transformed = sat_prep.transform(sat_input_df)
+    probs = sat_model.predict_proba(sat_transformed)
+    prob_not_churn = probs[0][1]
+
+    if prob_not_churn >= 0.5:
+      sentiment_rs = "Not Likely to Churn."
+
+    else:
+      sentiment_rs = "Likely to Churn."
 
 
   st.markdown(f"Customer is  {sentiment_rs}")
@@ -163,6 +182,8 @@ if submitted:
 
   with st.expander("See Behind the Scenes"):
         st.write("Sentiment Score (VADER):", sat_input_df['sentiment_score'][0])
+        st.write("Is Critical?", is_critical)
+        st.write("Is Praise?", is_praise)
         st.write("Data sent to Satisfaction Model:", sat_input_df)
 
 
