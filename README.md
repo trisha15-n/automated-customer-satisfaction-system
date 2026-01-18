@@ -4,7 +4,7 @@ An automated triage system for Customer Support teams. This application uses a *
 
 ##  Key Features
 
-* ** Automated Classification:** Uses ML to categorize tickets (e.g., Technical Support, Billing, Hardware Issues).
+* **Automated Classification:** Uses ML to categorize tickets (e.g., Technical Support, Billing, Hardware Issues).
 * **Smart Priority Detection:** Combines **Machine Learning** with a **Rule-Based Engine** to catch critical issues (e.g., "System Crash", "Hacked") instantly, ensuring 100% compliance on safety-critical tickets.
 * **Churn Risk Assessment:** Analyzes customer sentiment (VADER) and ticket metadata to predict the likelihood of the customer leaving.
 * **Guardrail System:** Intelligent logic to detect "Positive Feedback" or "Routine Requests" (like "Send Invoice") and bypass unnecessary alarms.
