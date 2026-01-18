@@ -18,19 +18,3 @@ An automated triage system for Customer Support teams. This application uses a *
 * **NLP:** NLTK (VADER Sentiment Analysis)
 * **Logging:** Custom Logger & Exception Handling
 
-## Project Structure
-
-```text
-├── artifacts/              # Saved Models & Preprocessors (.pkl files)
-├── data/                   # Dataset (CSV)
-├── src/
-│   ├── components/         # Core Logic Engines
-│   │   ├── priority_engine.py  # Hybrid Priority Logic
-│   │   └── ...
-│   ├── pipeline.py         # The "Brain" (Central Orchestrator)
-│   ├── utils.py            # Helper functions (Model Loading)
-│   ├── logger.py           # Custom Logging
-│   └── exception.py        # Custom Exception Handling
-├── app.py                  # Streamlit Frontend 
-├── requirements.txt        # Python Dependencies
-└── README.md               # Project Documentation
